@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文本处理服务 - 移除BR标签</title>
+    <link rel="icon" type="image/png" href="../coffee.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Consolas', monospace;
+            color: #1a1a1a;
+            background-color: #ffffff;
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            margin-bottom: 40px;
+            text-align: center;
+            padding-top: 20px;
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 300;
+            margin-bottom: 10px;
+            letter-spacing: 2px;
+        }
+
+        .container {
+            display: flex;
+            gap: 20px;
+            height: calc(100vh - 200px);
+            min-height: 500px;
+        }
+
+        .input-section, .output-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        h2 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #666;
+            font-weight: 400;
+        }
+
+        textarea {
+            flex: 1;
+            width: 100%;
+            padding: 15px;
+            border: 1px solid #e0e0e0;
+            border-radius: 4px;
+            font-family: 'Consolas', monospace;
+            font-size: 14px;
+            resize: none;
+            background-color: #f9f9f9;
+            transition: border-color 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: #007acc;
+            background-color: #fff;
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            gap: 15px;
+            padding: 0 10px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #1a1a1a;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: 'Consolas', monospace;
+            transition: all 0.3s ease;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #333;
+            transform: translateY(-2px);
+        }
+
+        button#copyBtn {
+            background-color: #28a745;
+        }
+
+        button#copyBtn:hover {
+            background-color: #218838;
+        }
+
+        .status-msg {
+            margin-top: 10px;
+            text-align: center;
+            font-size: 12px;
+            color: #28a745;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            height: 20px;
+        }
+
+        .status-msg.show {
+            opacity: 1;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            text-decoration: none;
+            color: #666;
+            font-size: 14px;
+        }
+
+        .back-link:hover {
+            color: #1a1a1a;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                height: auto;
+            }
+            textarea {
+                min-height: 200px;
+            }
+            .controls {
+                flex-direction: row;
+                padding: 10px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <a href="/" class="back-link">← 返回主页</a>
+    
+    <header>
+        <h1>文本处理服务</h1>
+        <p>移除 &lt;br/&gt; 标签并替换为换行符</p>
+    </header>
+
+    <div class="container">
+        <div class="input-section">
+            <h2>输入文本</h2>
+            <textarea id="inputText" placeholder="请在此粘贴包含 <br/> 的文本..."></textarea>
+        </div>
+
+        <div class="controls">
+            <button id="processBtn" onclick="processText()">处理 >></button>
+            <button id="copyBtn" onclick="copyResult()">复制结果</button>
+        </div>
+
+        <div class="output-section">
+            <h2>处理结果</h2>
+            <textarea id="outputText" readonly placeholder="处理后的文本将显示在这里..."></textarea>
+            <div id="statusMsg" class="status-msg">已复制到剪贴板！</div>
+        </div>
+    </div>
+
+    <script>
+        async function processText() {
+            const input = document.getElementById('inputText').value;
+            if (!input) return;
+
+            // 客户端预处理（为了快速响应）
+            // Replace <br/>, <br>, <br /> with newline
+            const processedLocal = input.replace(/<br\s*\/?>/gi, '\n');
+            document.getElementById('outputText').value = processedLocal;
+
+            // 发送给服务器记录和处理（满足"store and track"要求）
+            try {
+                const response = await fetch('/api/paste/process', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ text: input })
+                });
+                
+                const data = await response.json();
+                if (data.success && data.processedText) {
+                    // 使用服务器返回的结果，确保一致性
+                    document.getElementById('outputText').value = data.processedText;
+                }
+            } catch (error) {
+                console.error('API Error:', error);
+                // 即使API失败，客户端结果已经显示，用户体验不受影响
+            }
+        }
+
+        function copyResult() {
+            const output = document.getElementById('outputText');
+            output.select();
+            document.execCommand('copy');
+            
+            const msg = document.getElementById('statusMsg');
+            msg.classList.add('show');
+            setTimeout(() => {
+                msg.classList.remove('show');
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
