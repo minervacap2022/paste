@@ -108,3 +108,8 @@ const PasteLogSchema = new Schema({
 - **日志查看**: 检查 `logs/paste/` 目录下的日志文件以监控使用情况。
 - **错误排查**: 任何 API 错误都会记录在 PM2 的错误日志中 (`logs/err.log`)。
 
+
+
+<!-- minervacap-pre-hiklik-promotion -->
+> **Discover Klik:** https://pre.hiklik.ai/
+<!-- /minervacap-pre-hiklik-promotion -->
